@@ -39,7 +39,7 @@ class ImplementationTest {
                 left: 0;
                 width: 100%;
                 padding: 3px;
-                background: linear-gradient(90deg,#3d1b5d,#5c3997);
+                background: #001c4a;
                 box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
                 color: #fff;
                 font-family: Helvetica, Arial, sans-serif;
@@ -47,7 +47,7 @@ class ImplementationTest {
             }
             #idoutstream__implementation button {
                 flex: 1;
-                background: #44a5ab;
+                background: #006db6;
                 padding: 3px 10px;
                 margin: 2px;
                 border: 0;
@@ -63,10 +63,10 @@ class ImplementationTest {
                 white-space: nowrap;
             }
             #idoutstream__implementation button:hover {
-                background: #4fb3b9;
+                background: #278CEB;
             }
             #idoutstream__implementation button:active {
-                background: #62bbc0;
+                background: #278CEB;
             }
         `;
 
