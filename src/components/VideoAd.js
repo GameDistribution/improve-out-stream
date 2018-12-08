@@ -569,12 +569,10 @@ class VideoAd {
             this._onAdEvent.bind(this), this);
 
         // We need to resize our adContainer when the view dimensions change.
-        const containerHeight =
-            this._getRatioHeight(this.container.offsetWidth, 9, 16);
         window.addEventListener('resize', () => {
             this.adsManager.resize(
                 this.container.offsetWidth,
-                containerHeight,
+                this._getRatioHeight(this.container.offsetWidth, 9, 16),
                 google.ima.ViewMode.NORMAL,
             );
         });
@@ -608,11 +606,9 @@ class VideoAd {
             try {
                 // Initialize the ads manager. Ad rules playlist will
                 // start at this time.
-                const containerHeight =
-                    this._getRatioHeight(this.container.offsetWidth, 9, 16);
                 this.adsManager.init(
                     this.container.offsetWidth,
-                    containerHeight,
+                    this._getRatioHeight(this.container.offsetWidth, 9, 16),
                     google.ima.ViewMode.NORMAL,
                 );
                 // Call play to start showing the ad. Single video and
