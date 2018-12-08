@@ -50,8 +50,6 @@ class VideoAd {
         this.containerTransitionSpeed = 300;
         this.requestRunning = false;
         this.container = container;
-        this.width = container.offsetWidth;
-        this.height = container.offsetHeight;
         this.eventCategory = 'AD';
 
         // Setup a simple promise to resolve if the IMA loader is ready.
@@ -210,10 +208,10 @@ class VideoAd {
 
             // Specify the linear and nonlinear slot sizes. This helps
             // the SDK to select the correct creative if multiple are returned.
-            adsRequest.linearAdSlotWidth = this.width;
-            adsRequest.linearAdSlotHeight = this.height;
-            adsRequest.nonLinearAdSlotWidth = this.width;
-            adsRequest.nonLinearAdSlotHeight = this.height;
+            adsRequest.linearAdSlotWidth = this.container.offsetWidth;
+            adsRequest.linearAdSlotHeight = this.container.offsetHeight;
+            adsRequest.nonLinearAdSlotWidth = this.container.offsetWidth;
+            adsRequest.nonLinearAdSlotHeight = this.container.offsetHeight;
 
             // We don't want overlays as we do not have
             // a video player as underlying content!
@@ -392,7 +390,6 @@ class VideoAd {
     _createPlayer() {
         this.container.style.position = 'relative';
         this.container.style.padding = '0 0 56.25% 0';
-        this.container.style.height = '0';
         this.container.style.overflow = 'hidden';
         this.container.style.transform = 'translateX(-9999px)';
         this.container.style.opacity = '0';
@@ -405,9 +402,9 @@ class VideoAd {
         this.adContainer.style.position = 'absolute';
         this.adContainer.style.zIndex = '0';
         this.adContainer.style.top = '0';
+        this.adContainer.style.right = '0';
+        this.adContainer.style.bottom = '0';
         this.adContainer.style.left = '0';
-        this.adContainer.style.width = '100%';
-        this.adContainer.style.height = '100%';
         this.adContainer.style.transform = 'translateX(-9999px)';
         this.adContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
         this.adContainer.style.opacity = '0';
@@ -415,34 +412,23 @@ class VideoAd {
             this.containerTransitionSpeed +
             'ms cubic-bezier(0.55, 0, 0.1, 1)';
 
+        // This is the container where the actual ad will be embedded in.
         const adContainerInner = document.createElement('div');
         adContainerInner.id = this.options.prefix + 'advertisement_slot';
         adContainerInner.style.position = 'absolute';
         adContainerInner.style.backgroundColor = '#000000';
         adContainerInner.style.top = '0';
+        adContainerInner.style.right = '0';
+        adContainerInner.style.bottom = '0';
         adContainerInner.style.left = '0';
-        adContainerInner.style.width = this.width + 'px';
-        adContainerInner.style.height = this.height + 'px';
 
         this.adContainer.appendChild(adContainerInner);
         this.container.appendChild(this.adContainer);
-
-        // We need to resize our adContainer
-        // when the view dimensions change.
-        window.addEventListener('resize', () => {
-            this.width = this.container.offsetWidth;
-            this.height = this.container.offsetHeight;
-
-            console.log(`${this.width}x${this.height}`);
-
-            adContainerInner.style.width = this.width + 'px';
-            adContainerInner.style.height = this.height + 'px';
-        });
     }
 
     /**
      * _setUpIMA
-     * Create's a the adsLoader object.
+     * Create the adsLoader object.
      * @private
      */
     _setUpIMA() {
@@ -596,8 +582,11 @@ class VideoAd {
 
         // We need to resize our adContainer when the view dimensions change.
         window.addEventListener('resize', () => {
-            this.adsManager.resize(this.width, this.height,
-                google.ima.ViewMode.NORMAL);
+            this.adsManager.resize(
+                this.container.offsetWidth,
+                this.container.offsetHeight,
+                google.ima.ViewMode.NORMAL,
+            );
         });
 
         // Once the ad display container is ready and ads have been retrieved,
@@ -629,8 +618,11 @@ class VideoAd {
             try {
                 // Initialize the ads manager. Ad rules playlist will
                 // start at this time.
-                this.adsManager.init(this.width, this.height,
-                    google.ima.ViewMode.NORMAL);
+                this.adsManager.init(
+                    this.container.offsetWidth,
+                    this.container.offsetHeight,
+                    google.ima.ViewMode.NORMAL,
+                );
                 // Call play to start showing the ad. Single video and
                 // overlay ads will start at this time; the call will be
                 // ignored for ad rules.
