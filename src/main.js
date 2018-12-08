@@ -38,6 +38,7 @@ class SDK {
             debug: false,
             testing: false,
             prefix: 'idoutstream__',
+            containerId: 'outstream',
             onEvent: function(event) {
                 // ...
             },
@@ -61,6 +62,14 @@ class SDK {
         console.log.apply(console, banner);
         /* eslint-enable */
 
+        // First make sure we have an element set for ad displaying.
+        const container = document.getElementById(this.options.containerId);
+        if (!container) {
+            dankLog('SDK',
+                'Container element is missing within the document!', 'error');
+            return;
+        }
+
         // Get referrer domain data.
         const parentDomain = getParentDomain();
 
@@ -82,6 +91,14 @@ class SDK {
             console.log(error);
         }
 
+        // GDPR (General Data Protection Regulation).
+        // Todo: make sure to pass proper EUConsent cookie, can't remember name.
+        const consent = document.cookie.split(';').
+            filter((item) => item.includes('EUConsent')).length === 1;
+
+        // Load analytics solutions based on tracking consent.
+        this._analytics(consent);
+
         // Setup all event listeners.
         // We also send a Google Analytics event for each one of our events.
         this.eventBus = new EventBus();
@@ -89,10 +106,6 @@ class SDK {
         // SDK events
         this.eventBus.subscribe('SDK_READY', (arg) => this._onEvent(arg));
         this.eventBus.subscribe('SDK_ERROR', (arg) => this._onEvent(arg));
-
-        // GDPR events
-        this.eventBus.subscribe('SDK_GDPR_CONSENT',
-            (arg) => this._onEvent(arg));
 
         // IMA HTML5 SDK events
         this.eventBus.subscribe('AD_SDK_LOADER_READY',
@@ -137,40 +150,20 @@ class SDK {
         this.eventBus.subscribe('VOLUME_CHANGED', (arg) => this._onEvent(arg));
         this.eventBus.subscribe('VOLUME_MUTED', (arg) => this._onEvent(arg));
 
-        // GDPR (General Data Protection Regulation).
-        // Todo: make sure to pass proper EUConsent cookie, can't remember name.
-        const consent = document.cookie.split(';').
-            filter((item) => item.includes('EUConsent')).length === 1;
-
-        // Load analytics solutions based on tracking consent.
-        this._analytics(consent);
-
-        // Broadcast GDPR event.
-        // Publisheder can hook into this event to kill their own solution(s).
-        this.eventBus.broadcast('SDK_GDPR_CONSENT', {
-            name: 'SDK_GDPR_CONSENT',
-            message: consent
-                ? 'General Data Protection Regulation is set to allow tracking.'
-                : 'General Data Protection Regulation is set to disallow tracking.',
-            status: consent ? 'success' : 'warning',
-            analytics: {
-                category: 'SDK_GDPR_CONSENT',
-                action: parentDomain,
-                label: consent ? 'consent given' : 'consent not given',
-            },
-        });
-
         // Only allow ads after a certain amount of time.
         this.adRequestInterval = 60000;
-        this.adRequestTimer = (new Date(new Date().getTime() - this.adRequestInterval)).valueOf();
+        this.adRequestTimer = (new Date(new Date().getTime() -
+            this.adRequestInterval)).valueOf();
 
         // Start our advertisement instance. Setting up the
         // adsLoader should resolve the adsLoader promise.
-        this.videoAdInstance = new VideoAd();
-        // Todo: add proper tag and targeting.
-        this.videoAdInstance.tag = '';
-        this.videoAdInstance.targeting = {};
-        this.videoAdInstance.prefix = this.options.prefix;
+        this.videoAdInstance = new VideoAd(container, {
+            debug: false, // this.options.debug,
+            domain: parentDomain,
+            // Todo: add proper tag and targeting.
+            // tag: '',
+            // targeting: {},
+        });
 
         // Enable some debugging perks.
         try {

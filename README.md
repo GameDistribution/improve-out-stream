@@ -55,7 +55,8 @@ All SDK events, which can be hooked into, are described below.
 
 | Event | Description |
 | --- | --- |
-| SDK_GDPR_CONSENT | When the publishers' client has given GDPR consent. |
+| SDK_READY | When the SDK is ready. |
+| SDK_ERROR | When the SDK has hit a critical error. |
 
 ### IMA SDK EVENTS
 The SDK events are custom ads for handling any thing related to the IMA SDK itself.

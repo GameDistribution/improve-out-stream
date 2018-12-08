@@ -4,7 +4,6 @@ import EventBus from '../components/EventBus';
 
 import {
     extendDefaults,
-    getParentDomain,
 } from '../modules/common';
 import {dankLog} from '../modules/dankLog';
 
@@ -16,7 +15,7 @@ let instance = null;
 class VideoAd {
     /**
      * Constructor of VideoAd.
-     * @param {String} container
+     * @param {Object} container
      * @param {Object} options
      * @return {*}
      */
@@ -30,10 +29,11 @@ class VideoAd {
 
         const defaults = {
             debug: false,
-            responsive: true,
-            width: 640,
-            height: 360,
+            prefix: 'idoutstream__',
             locale: 'en',
+            domain: '',
+            tag: '',
+            targeting: {},
         };
 
         if (options) {
@@ -42,10 +42,6 @@ class VideoAd {
             this.options = defaults;
         }
 
-        this.tag = '';
-        this.targeting = {};
-
-        this.prefix = 'idoutstream__'; // Todo: our prebid wrapper cant handle dynamic id's.
         this.adsLoader = null;
         this.adsManager = null;
         this.adDisplayContainer = null;
@@ -53,53 +49,9 @@ class VideoAd {
         this.safetyTimer = null;
         this.containerTransitionSpeed = 300;
         this.requestRunning = false;
-        this.parentDomain = getParentDomain();
-
-        // Flash games load this HTML5 SDK as well. This means that sometimes
-        // the ad should not be created outside of the borders of the game.
-        // The Flash SDK passes us the container ID for us to use.
-        // Otherwise we just create the container ourselves.
-        this.thirdPartyContainer = (container !== '')
-            ? document.getElementById(container)
-            : null;
-
-        // Make sure given width and height doesn't contain non-numbers.
-        this.options.width = (typeof this.options.width === 'number')
-            ? this.options.width
-            : (this.options.width === '100%')
-                ? 640
-                : this.options.width.replace(/[^0-9]/g, '');
-        this.options.height = (typeof this.options.height === 'number')
-            ? this.options.height
-            : (this.options.height === '100%')
-                ? 360
-                : this.options.height.replace(/[^0-9]/g, '');
-
-        // Enable a responsive advertisement.
-        // Assuming we only want responsive advertisements
-        // below 1024 pixel client width. Reason for this is that some
-        // advertisers buy based on ad size.
-        const viewWidth = window.innerWidth ||
-            document.documentElement.clientWidth || document.body.clientWidth;
-        const viewHeight = window.innerHeight ||
-            document.documentElement.clientHeight || document.body.clientHeight;
-        this.options.responsive = (this.options.responsive
-            && viewWidth <= 1024);
-        if (this.options.responsive || this.thirdPartyContainer) {
-            // Check if the ad container is not already set.
-            // This is usually done when using the Flash SDK.
-            this.options.width = (this.thirdPartyContainer)
-                ? this.thirdPartyContainer.offsetWidth
-                : viewWidth;
-            this.options.height = (this.thirdPartyContainer)
-                ? this.thirdPartyContainer.offsetHeight
-                : viewHeight;
-        }
-
-        // Analytics variables
-        this.gameId = '0';
-        this.category = '';
-        this.tags = [];
+        this.container = container;
+        this.width = container.offsetWidth;
+        this.height = container.offsetHeight;
         this.eventCategory = 'AD';
 
         // Setup a simple promise to resolve if the IMA loader is ready.
@@ -107,7 +59,8 @@ class VideoAd {
         // even setup our advertisement instance.
         this.adsLoaderPromise = new Promise((resolve, reject) => {
             this.eventBus.subscribe('AD_SDK_LOADER_READY', () => resolve());
-            this.eventBus.subscribe('AD_CANCELED', () => reject(new Error('Initial adsLoaderPromise failed to load.')));
+            this.eventBus.subscribe('AD_CANCELED', () => reject(
+                new Error('Initial adsLoaderPromise failed to load.')));
         });
 
         // Load Google IMA HTML5 SDK.
@@ -177,13 +130,15 @@ class VideoAd {
     /**
      * requestAd
      * Request advertisements.
-     * @return {Promise} Promise that returns DFP vast url like https://pubads.g.doubleclick.net/...
+     * @return {Promise} Promise that returns DFP vast url like
+     *     https://pubads.g.doubleclick.net/...
      * @public
      */
     requestAd() {
         return new Promise((resolve, reject) => {
             if (this.requestRunning) {
-                dankLog('AD_SDK_REQUEST', 'A request is already running', 'warning');
+                dankLog('AD_SDK_REQUEST', 'A request is already running',
+                    'warning');
                 return;
             }
 
@@ -197,7 +152,8 @@ class VideoAd {
                     resolve(localStorage.getItem('idoutstream_tag'));
                 } else {
                     if (typeof window.idhbgd.requestAds === 'undefined') {
-                        reject('Prebid.js wrapper script hit an error or didn\'t exist!');
+                        reject(
+                            'Prebid.js wrapper script hit an error or didn\'t exist!');
                     }
 
                     // Send event for Tunnl debugging.
@@ -205,17 +161,19 @@ class VideoAd {
                         window['ga']('gd.send', {
                             hitType: 'event',
                             eventCategory: 'AD_REQUEST',
-                            eventAction: this.parentDomain,
-                            eventLabel: this.tag,
+                            eventAction: this.options.domain,
+                            eventLabel: this.options.tag,
                         });
                     }
 
-                    // Make the request for a VAST tag from the Prebid.js wrapper.
-                    // Get logging from the wrapper using: ?idhbgd_debug=true
-                    // To get a copy of the current config: copy(idhbgd.getConfig());
+                    // Make the request for a VAST tag from the Prebid.js
+                    // wrapper. Get logging from the wrapper using:
+                    // ?idhbgd_debug=true To get a copy of the current config:
+                    // copy(idhbgd.getConfig());
                     window.idhbgd.que.push(() => {
-                        window.idhbgd.setAdserverTargeting(this.targeting);
-                        window.idhbgd.setDfpAdUnitCode(this.tag);
+                        window.idhbgd.setAdserverTargeting(
+                            this.options.targeting);
+                        window.idhbgd.setDfpAdUnitCode(this.options.tag);
                         window.idhbgd.requestAds({
                             callback: vastUrl => {
                                 resolve(vastUrl);
@@ -252,10 +210,10 @@ class VideoAd {
 
             // Specify the linear and nonlinear slot sizes. This helps
             // the SDK to select the correct creative if multiple are returned.
-            adsRequest.linearAdSlotWidth = this.options.width;
-            adsRequest.linearAdSlotHeight = this.options.height;
-            adsRequest.nonLinearAdSlotWidth = this.options.width;
-            adsRequest.nonLinearAdSlotHeight = this.options.height;
+            adsRequest.linearAdSlotWidth = this.width;
+            adsRequest.linearAdSlotHeight = this.height;
+            adsRequest.nonLinearAdSlotWidth = this.width;
+            adsRequest.nonLinearAdSlotHeight = this.height;
 
             // We don't want overlays as we do not have
             // a video player as underlying content!
@@ -311,7 +269,7 @@ class VideoAd {
             analytics: {
                 category: this.eventCategory,
                 action: eventName,
-                label: this.gameId,
+                label: this.options.domain,
             },
         });
     }
@@ -346,19 +304,14 @@ class VideoAd {
     _hide() {
         if (this.adContainer) {
             this.adContainer.style.opacity = '0';
-            if (this.thirdPartyContainer) {
-                this.thirdPartyContainer.style.opacity = '0';
-            }
+            this.container.style.opacity = '0';
             setTimeout(() => {
                 // We do not use display none. Otherwise element.offsetWidth
                 // and height will return 0px.
                 this.adContainer.style.transform = 'translateX(-9999px)';
                 this.adContainer.style.zIndex = '0';
-                if (this.thirdPartyContainer) {
-                    this.thirdPartyContainer.style.transform =
-                        'translateX(-9999px)';
-                    this.thirdPartyContainer.style.zIndex = '0';
-                }
+                this.container.style.transform = 'translateX(-9999px)';
+                this.container.style.zIndex = '0';
             }, this.containerTransitionSpeed);
         }
     }
@@ -372,17 +325,12 @@ class VideoAd {
         if (this.adContainer) {
             this.adContainer.style.transform = 'translateX(0)';
             this.adContainer.style.zIndex = '99';
-            if (this.thirdPartyContainer) {
-                this.thirdPartyContainer.style.transform = 'translateX(0)';
-                this.thirdPartyContainer.style.zIndex = '99';
-                // Sometimes our client set the container to display none.
-                this.thirdPartyContainer.style.display = 'block';
-            }
+            this.container.style.transform = 'translateX(0)';
+            this.container.style.zIndex = '99';
+            this.container.style.display = 'block';
             setTimeout(() => {
                 this.adContainer.style.opacity = '1';
-                if (this.thirdPartyContainer) {
-                    this.thirdPartyContainer.style.opacity = '1';
-                }
+                this.container.style.opacity = '1';
             }, 10);
         }
     }
@@ -407,7 +355,8 @@ class VideoAd {
                 resolve();
             };
             ima.onerror = () => {
-                reject('IMA script failed to load! Probably due to an ADBLOCKER!');
+                reject(
+                    'IMA script failed to load! Probably due to an ADBLOCKER!');
             };
             script.parentNode.insertBefore(ima, script);
         });
@@ -426,7 +375,8 @@ class VideoAd {
                 resolve();
             };
             ima.onerror = () => {
-                reject('Prebid.js failed to load! Probably due to an ADBLOCKER!');
+                reject(
+                    'Prebid.js failed to load! Probably due to an ADBLOCKER!');
             };
             script.parentNode.insertBefore(ima, script);
         });
@@ -440,13 +390,19 @@ class VideoAd {
      * @private
      */
     _createPlayer() {
-        const body = document.body || document.getElementsByTagName('body')[0];
+        this.container.style.position = 'relative';
+        this.container.style.padding = '0 0 56.25% 0';
+        this.container.style.height = '0';
+        this.container.style.overflow = 'hidden';
+        this.container.style.transform = 'translateX(-9999px)';
+        this.container.style.opacity = '0';
+        this.container.style.transition = 'opacity ' +
+            this.containerTransitionSpeed +
+            'ms cubic-bezier(0.55, 0, 0.1, 1)';
 
         this.adContainer = document.createElement('div');
-        this.adContainer.id = this.prefix + 'advertisement';
-        this.adContainer.style.position = (this.thirdPartyContainer)
-            ? 'absolute'
-            : 'fixed';
+        this.adContainer.id = this.options.prefix + 'advertisement';
+        this.adContainer.style.position = 'absolute';
         this.adContainer.style.zIndex = '0';
         this.adContainer.style.top = '0';
         this.adContainer.style.left = '0';
@@ -458,60 +414,30 @@ class VideoAd {
         this.adContainer.style.transition = 'opacity ' +
             this.containerTransitionSpeed +
             'ms cubic-bezier(0.55, 0, 0.1, 1)';
-        if (this.thirdPartyContainer) {
-            this.thirdPartyContainer.style.transform = 'translateX(-9999px)';
-            this.thirdPartyContainer.style.opacity = '0';
-            this.thirdPartyContainer.style.transition = 'opacity ' +
-                this.containerTransitionSpeed +
-                'ms cubic-bezier(0.55, 0, 0.1, 1)';
-        }
 
         const adContainerInner = document.createElement('div');
-        adContainerInner.id = this.prefix + 'advertisement_slot';
+        adContainerInner.id = this.options.prefix + 'advertisement_slot';
         adContainerInner.style.position = 'absolute';
         adContainerInner.style.backgroundColor = '#000000';
-        if (this.options.responsive || this.thirdPartyContainer) {
-            adContainerInner.style.top = '0';
-            adContainerInner.style.left = '0';
-        } else {
-            adContainerInner.style.left = '50%';
-            adContainerInner.style.top = '50%';
-            adContainerInner.style.transform = 'translate(-50%, -50%)';
-            adContainerInner.style.boxShadow = '0 0 8px rgba(0, 0, 0, 1)';
-        }
-        adContainerInner.style.width = this.options.width + 'px';
-        adContainerInner.style.height = this.options.height + 'px';
+        adContainerInner.style.top = '0';
+        adContainerInner.style.left = '0';
+        adContainerInner.style.width = this.width + 'px';
+        adContainerInner.style.height = this.height + 'px';
 
-        // Append the adContainer to our Flash container, when using the
-        // Flash SDK implementation.
-        if (this.thirdPartyContainer) {
-            this.adContainer.appendChild(adContainerInner);
-            this.thirdPartyContainer.appendChild(this.adContainer);
-        } else {
-            this.adContainer.appendChild(adContainerInner);
-            body.appendChild(this.adContainer);
-        }
+        this.adContainer.appendChild(adContainerInner);
+        this.container.appendChild(this.adContainer);
 
         // We need to resize our adContainer
         // when the view dimensions change.
-        if (this.options.responsive || this.thirdPartyContainer) {
-            window.addEventListener('resize', () => {
-                const viewWidth = window.innerWidth ||
-                    document.documentElement.clientWidth ||
-                    document.body.clientWidth;
-                const viewHeight = window.innerHeight ||
-                    document.documentElement.clientHeight ||
-                    document.body.clientHeight;
-                this.options.width = (this.thirdPartyContainer)
-                    ? this.thirdPartyContainer.offsetWidth
-                    : viewWidth;
-                this.options.height = (this.thirdPartyContainer)
-                    ? this.thirdPartyContainer.offsetHeight
-                    : viewHeight;
-                adContainerInner.style.width = this.options.width + 'px';
-                adContainerInner.style.height = this.options.height + 'px';
-            });
-        }
+        window.addEventListener('resize', () => {
+            this.width = this.container.offsetWidth;
+            this.height = this.container.offsetHeight;
+
+            console.log(`${this.width}x${this.height}`);
+
+            adContainerInner.style.width = this.width + 'px';
+            adContainerInner.style.height = this.height + 'px';
+        });
     }
 
     /**
@@ -541,7 +467,7 @@ class VideoAd {
         // We assume the adContainer is the DOM id of the element that
         // will house the ads.
         this.adDisplayContainer = new google.ima.AdDisplayContainer(
-            document.getElementById(this.prefix
+            document.getElementById(this.options.prefix
                 + 'advertisement_slot'),
         );
 
@@ -577,7 +503,7 @@ class VideoAd {
             status: 'success',
             analytics: {
                 category: eventName,
-                action: this.parentDomain,
+                action: this.options.domain,
                 label: `h${h} d${d} m${m} y${y}`,
             },
         });
@@ -669,12 +595,10 @@ class VideoAd {
             this._onAdEvent.bind(this), this);
 
         // We need to resize our adContainer when the view dimensions change.
-        if (this.options.responsive || this.thirdPartyContainer) {
-            window.addEventListener('resize', () => {
-                this.adsManager.resize(this.options.width, this.options.height,
-                    google.ima.ViewMode.NORMAL);
-            });
-        }
+        window.addEventListener('resize', () => {
+            this.adsManager.resize(this.width, this.height,
+                google.ima.ViewMode.NORMAL);
+        });
 
         // Once the ad display container is ready and ads have been retrieved,
         // we can use the ads manager to display the ads.
@@ -693,7 +617,7 @@ class VideoAd {
                 status: 'success',
                 analytics: {
                     category: eventName,
-                    action: this.parentDomain,
+                    action: this.options.domain,
                     label: `h${h} d${d} m${m} y${y}`,
                 },
             });
@@ -705,7 +629,7 @@ class VideoAd {
             try {
                 // Initialize the ads manager. Ad rules playlist will
                 // start at this time.
-                this.adsManager.init(this.options.width, this.options.height,
+                this.adsManager.init(this.width, this.height,
                     google.ima.ViewMode.NORMAL);
                 // Call play to start showing the ad. Single video and
                 // overlay ads will start at this time; the call will be
@@ -742,7 +666,7 @@ class VideoAd {
         case google.ima.AdEvent.Type.AD_BREAK_READY:
             eventName = 'AD_BREAK_READY';
             eventMessage = 'Fired when an ad rule or a VMAP ad break would ' +
-                'have played if autoPlayAdBreaks is false.';
+                    'have played if autoPlayAdBreaks is false.';
             break;
         case google.ima.AdEvent.Type.AD_METADATA:
             eventName = 'AD_METADATA';
@@ -751,7 +675,7 @@ class VideoAd {
         case google.ima.AdEvent.Type.ALL_ADS_COMPLETED:
             eventName = 'ALL_ADS_COMPLETED';
             eventMessage = 'Fired when the ads manager is done playing all ' +
-                'the ads.';
+                    'the ads.';
             break;
         case google.ima.AdEvent.Type.CLICK:
             eventName = 'CLICK';
@@ -764,13 +688,13 @@ class VideoAd {
         case google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED:
             eventName = 'CONTENT_PAUSE_REQUESTED';
             eventMessage = 'Fired when content should be paused. This ' +
-                'usually happens right before an ad is about to cover ' +
-                'the content.';
+                    'usually happens right before an ad is about to cover ' +
+                    'the content.';
             break;
         case google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED:
             eventName = 'CONTENT_RESUME_REQUESTED';
             eventMessage = 'Fired when content should be resumed. This ' +
-                'usually happens when an ad finishes or collapses.';
+                    'usually happens when an ad finishes or collapses.';
 
             // Hide the advertisement.
             this._hide();
@@ -801,7 +725,7 @@ class VideoAd {
                     status: 'success',
                     analytics: {
                         category: eventName,
-                        action: this.parentDomain,
+                        action: this.options.domain,
                         label: `h${h} d${d} m${m} y${y}`,
                     },
                 });
@@ -817,7 +741,7 @@ class VideoAd {
         case google.ima.AdEvent.Type.FIRST_QUARTILE:
             eventName = 'FIRST_QUARTILE';
             eventMessage = 'Fired when the ad playhead crosses first ' +
-                'quartile.';
+                    'quartile.';
             break;
         case google.ima.AdEvent.Type.IMPRESSION:
             eventName = 'IMPRESSION';
@@ -826,8 +750,8 @@ class VideoAd {
             // Send out additional impression Google Analytics event.
             try {
                 // Check which bidder served us the impression.
-                // We can call on a Prebid.js method. If it exists we report it.
-                // Our default ad provider is Ad Exchange.
+                // We can call on a Prebid.js method. If it exists we
+                // report it. Our default ad provider is Ad Exchange.
                 if (typeof window['pbjsgd'] !== 'undefined') {
                     const winners = window.pbjsgd.getHighestCpmBids();
                     if (this.options.debug) {
@@ -837,27 +761,28 @@ class VideoAd {
                     if (winners.length > 0) {
                         winners.forEach((winner) => {
                             /* eslint-disable */
-                            if (typeof window['ga'] !== 'undefined' && winner.bidder) {
+                                if (typeof window['ga'] !== 'undefined' &&
+                                    winner.bidder) {
+                                    window['ga']('gd.send', {
+                                        hitType: 'event',
+                                        eventCategory: `IMPRESSION_${winner.bidder.toUpperCase()}`,
+                                        eventAction: this.options.domain,
+                                        eventLabel: `h${h} d${d} m${m} y${y}`,
+                                    });
+                                }
+                                /* eslint-enable */
+                        });
+                    } else {
+                        /* eslint-disable */
+                            if (typeof window['ga'] !== 'undefined') {
                                 window['ga']('gd.send', {
                                     hitType: 'event',
-                                    eventCategory: `IMPRESSION_${winner.bidder.toUpperCase()}`,
-                                    eventAction: this.parentDomain,
+                                    eventCategory: 'IMPRESSION_ADEXCHANGE',
+                                    eventAction: this.options.domain,
                                     eventLabel: `h${h} d${d} m${m} y${y}`,
                                 });
                             }
                             /* eslint-enable */
-                        });
-                    } else {
-                        /* eslint-disable */
-                        if (typeof window['ga'] !== 'undefined') {
-                            window['ga']('gd.send', {
-                                hitType: 'event',
-                                eventCategory: 'IMPRESSION_ADEXCHANGE',
-                                eventAction: this.parentDomain,
-                                eventLabel: `h${h} d${d} m${m} y${y}`,
-                            });
-                        }
-                        /* eslint-enable */
                     }
                 }
             } catch (error) {
@@ -868,13 +793,13 @@ class VideoAd {
         case google.ima.AdEvent.Type.INTERACTION:
             eventName = 'INTERACTION';
             eventMessage = 'Fired when an ad triggers the interaction ' +
-                'callback. Ad interactions contain an interaction ID ' +
-                'string in the ad data.';
+                    'callback. Ad interactions contain an interaction ID ' +
+                    'string in the ad data.';
             break;
         case google.ima.AdEvent.Type.LINEAR_CHANGED:
             eventName = 'LINEAR_CHANGED';
             eventMessage = 'Fired when the displayed ad changes from ' +
-                'linear to nonlinear, or vice versa.';
+                    'linear to nonlinear, or vice versa.';
             break;
         case google.ima.AdEvent.Type.LOADED:
             eventName = 'LOADED';
@@ -902,7 +827,7 @@ class VideoAd {
         case google.ima.AdEvent.Type.SKIPPABLE_STATE_CHANGED:
             eventName = 'SKIPPABLE_STATE_CHANGED';
             eventMessage = 'Fired when the displayed ads skippable state ' +
-                'is changed.';
+                    'is changed.';
             break;
         case google.ima.AdEvent.Type.SKIPPED:
             eventName = 'SKIPPED';
@@ -915,7 +840,7 @@ class VideoAd {
         case google.ima.AdEvent.Type.THIRD_QUARTILE:
             eventName = 'THIRD_QUARTILE';
             eventMessage = 'Fired when the ad playhead crosses third ' +
-                'quartile.';
+                    'quartile.';
             break;
         case google.ima.AdEvent.Type.USER_CLOSE:
             eventName = 'USER_CLOSE';
@@ -939,7 +864,7 @@ class VideoAd {
                 status: 'success',
                 analytics: {
                     category: eventName,
-                    action: this.parentDomain,
+                    action: this.options.domain,
                     label: `h${h} d${d} m${m} y${y}`,
                 },
             });
@@ -967,7 +892,8 @@ class VideoAd {
                     status: 'warning',
                     analytics: {
                         category: eventName,
-                        action: event.getError().getErrorCode().toString() || event.getError().getVastErrorCode().toString(),
+                        action: event.getError().getErrorCode().toString() ||
+                        event.getError().getVastErrorCode().toString(),
                         label: eventMessage,
                     },
                 });
@@ -976,8 +902,8 @@ class VideoAd {
 
             // Check which bidder served us a possible broken advertisement.
             // We can call on a Prebid.js method. If it exists we report it.
-            // If there is no winning bid we assume the problem lies with AdExchange.
-            // As our default ad provider is Ad Exchange.
+            // If there is no winning bid we assume the problem lies with
+            // AdExchange. As our default ad provider is Ad Exchange.
             if (typeof window['pbjsgd'] !== 'undefined') {
                 const winners = window.pbjsgd.getHighestCpmBids();
                 if (this.options.debug) {
@@ -987,14 +913,20 @@ class VideoAd {
                 if (winners.length > 0) {
                     winners.forEach((winner) => {
                         const adId = winner.adId ? winner.adId : null;
-                        const creativeId = winner.creativeId ? winner.creativeId : null;
+                        const creativeId = winner.creativeId
+                            ? winner.creativeId
+                            : null;
 
                         /* eslint-disable */
-                        if (typeof window['ga'] !== 'undefined' && winner.bidder) {
+                        if (typeof window['ga'] !== 'undefined' &&
+                            winner.bidder) {
                             window['ga']('gd.send', {
                                 hitType: 'event',
                                 eventCategory: `AD_ERROR_${winner.bidder.toUpperCase()}`,
-                                eventAction: event.getError().getErrorCode().toString() || event.getError().getVastErrorCode().toString(),
+                                eventAction: event.getError().
+                                    getErrorCode().
+                                    toString() ||
+                                event.getError().getVastErrorCode().toString(),
                                 eventLabel: `${adId} | ${creativeId}`,
                             });
                         }
@@ -1006,7 +938,10 @@ class VideoAd {
                         window['ga']('gd.send', {
                             hitType: 'event',
                             eventCategory: 'AD_ERROR_ADEXCHANGE',
-                            eventAction: event.getError().getErrorCode().toString() || event.getError().getVastErrorCode().toString(),
+                            eventAction: event.getError().
+                                getErrorCode().
+                                toString() ||
+                            event.getError().getVastErrorCode().toString(),
                             eventLabel: event.getError().getMessage(),
                         });
                     }
@@ -1042,7 +977,7 @@ class VideoAd {
                 analytics: {
                     category: this.eventCategory,
                     action: eventName,
-                    label: this.gameId,
+                    label: this.options.domain,
                 },
             });
             this.cancel();
