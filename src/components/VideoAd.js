@@ -208,10 +208,12 @@ class VideoAd {
 
             // Specify the linear and nonlinear slot sizes. This helps
             // the SDK to select the correct creative if multiple are returned.
+            const containerHeight =
+                this._getRatioHeight(this.container.offsetWidth, 9, 16);
             adsRequest.linearAdSlotWidth = this.container.offsetWidth;
-            adsRequest.linearAdSlotHeight = this.container.offsetHeight;
+            adsRequest.linearAdSlotHeight = containerHeight;
             adsRequest.nonLinearAdSlotWidth = this.container.offsetWidth;
-            adsRequest.nonLinearAdSlotHeight = this.container.offsetHeight;
+            adsRequest.nonLinearAdSlotHeight = containerHeight;
 
             // We don't want overlays as we do not have
             // a video player as underlying content!
@@ -300,18 +302,10 @@ class VideoAd {
      * @private
      */
     _hide() {
-        if (this.adContainer) {
-            this.adContainer.style.opacity = '0';
-            this.container.style.opacity = '0';
-            setTimeout(() => {
-                // We do not use display none. Otherwise element.offsetWidth
-                // and height will return 0px.
-                this.adContainer.style.transform = 'translateX(-9999px)';
-                this.adContainer.style.zIndex = '0';
-                this.container.style.transform = 'translateX(-9999px)';
-                this.container.style.zIndex = '0';
-            }, this.containerTransitionSpeed);
-        }
+        this.adContainer.style.display = 'block';
+        setTimeout(() => {
+            this.adContainer.style.display = 'none';
+        }, this.containerTransitionSpeed);
     }
 
     /**
@@ -320,17 +314,10 @@ class VideoAd {
      * @private
      */
     _show() {
-        if (this.adContainer) {
-            this.adContainer.style.transform = 'translateX(0)';
-            this.adContainer.style.zIndex = '99';
-            this.container.style.transform = 'translateX(0)';
-            this.container.style.zIndex = '99';
-            this.container.style.display = 'block';
-            setTimeout(() => {
-                this.adContainer.style.opacity = '1';
-                this.container.style.opacity = '1';
-            }, 10);
-        }
+        this.adContainer.style.display = 'none';
+        setTimeout(() => {
+            this.adContainer.style.display = 'block';
+        }, 10);
     }
 
     /**
@@ -388,29 +375,17 @@ class VideoAd {
      * @private
      */
     _createPlayer() {
-        this.container.style.position = 'relative';
-        this.container.style.padding = '0 0 56.25% 0';
-        this.container.style.overflow = 'hidden';
-        this.container.style.transform = 'translateX(-9999px)';
-        this.container.style.opacity = '0';
-        this.container.style.transition = 'opacity ' +
-            this.containerTransitionSpeed +
-            'ms cubic-bezier(0.55, 0, 0.1, 1)';
-
         this.adContainer = document.createElement('div');
         this.adContainer.id = this.options.prefix + 'advertisement';
-        this.adContainer.style.position = 'absolute';
-        this.adContainer.style.zIndex = '0';
-        this.adContainer.style.top = '0';
-        this.adContainer.style.right = '0';
-        this.adContainer.style.bottom = '0';
-        this.adContainer.style.left = '0';
-        this.adContainer.style.transform = 'translateX(-9999px)';
+        this.adContainer.style.display = 'none';
+        this.adContainer.style.position = 'relative';
+        this.adContainer.style.padding = '0 0 56.25% 0';
+        this.adContainer.style.height = '0';
+        this.adContainer.style.overflow = 'hidden';
         this.adContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-        this.adContainer.style.opacity = '0';
-        this.adContainer.style.transition = 'opacity ' +
-            this.containerTransitionSpeed +
-            'ms cubic-bezier(0.55, 0, 0.1, 1)';
+        // this.adContainer.style.transition = 'opacity ' +
+        //     this.containerTransitionSpeed +
+        //     'ms cubic-bezier(0.55, 0, 0.1, 1)';
 
         // This is the container where the actual ad will be embedded in.
         const adContainerInner = document.createElement('div');
@@ -424,6 +399,19 @@ class VideoAd {
 
         this.adContainer.appendChild(adContainerInner);
         this.container.appendChild(this.adContainer);
+    }
+
+    /**
+     * _getRatioHeight
+     * @param {Number} width
+     * @param {Number} ratioHeight
+     * @param {Number} ratioWidth
+     * @return {Number}
+     * @private
+     */
+    _getRatioHeight(width, ratioHeight, ratioWidth) {
+        const ratio = width / ratioWidth;
+        return ratio * ratioHeight;
     }
 
     /**
@@ -581,10 +569,12 @@ class VideoAd {
             this._onAdEvent.bind(this), this);
 
         // We need to resize our adContainer when the view dimensions change.
+        const containerHeight =
+            this._getRatioHeight(this.container.offsetWidth, 9, 16);
         window.addEventListener('resize', () => {
             this.adsManager.resize(
                 this.container.offsetWidth,
-                this.container.offsetHeight,
+                containerHeight,
                 google.ima.ViewMode.NORMAL,
             );
         });
@@ -618,9 +608,11 @@ class VideoAd {
             try {
                 // Initialize the ads manager. Ad rules playlist will
                 // start at this time.
+                const containerHeight =
+                    this._getRatioHeight(this.container.offsetWidth, 9, 16);
                 this.adsManager.init(
                     this.container.offsetWidth,
-                    this.container.offsetHeight,
+                    containerHeight,
                     google.ima.ViewMode.NORMAL,
                 );
                 // Call play to start showing the ad. Single video and
