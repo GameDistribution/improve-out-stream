@@ -1,0 +1,42 @@
+<html>
+<head>
+    <title>Improve Digital out-stream SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <style>
+        #container {
+            position: absolute; margin: auto; width: 800px; height: 600px;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0; padding: 0; background: linear-gradient(90deg,#1b3786,#24b3c0);">
+
+<div id="container"></div>
+
+<script type="text/javascript">
+    window["OUTSTREAM_OPTIONS"] = {
+        "debug": true,
+        "onEvent": function(event) {
+            switch (event.name) {
+                case "SDK_READY":
+                    // ...
+                    break;
+                case "SDK_ERROR":
+                    // ...
+                    break;
+                case "SDK_GDPR_CONSENT":
+                    // ..
+                    break;
+            }
+        },
+    };
+    (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = './lib/main.js?v=1';
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'idoutstream-jssdk'));
+</script>
+</body>
+</html>
