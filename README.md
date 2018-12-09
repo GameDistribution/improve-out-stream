@@ -7,7 +7,35 @@
 This is the documentation of the "Improve out-stream SDK" project.
 
 ## Implementation
-...
+```
+<div id="outstream"></div>
+
+<script type="text/javascript">
+    window['OUTSTREAM_OPTIONS'] = {
+        'debug': false,
+        'containerId': 'outstream',
+        'onEvent': function(event) {
+            switch (event.name) {
+                case 'SDK_READY':
+                    // ...
+                    break;
+                case 'SDK_ERROR':
+                    // ...
+                    break;
+            }
+        },
+    };
+    (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = './lib/main.js?v=1';
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'idoutstream-jssdk'));
+</script>
+
+```
 
 ## Debugging
 Web pages including the SDK can be easily debugged by calling the following from within a browser developer console:
