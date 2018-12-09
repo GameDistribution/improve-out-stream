@@ -43,11 +43,6 @@ Make a production build:
 grunt build
 ```
 
-Make a production build of the promotion script. This script is loaded through advertisement slots to support for cross promotions:
-```
-grunt promo
-```
-
 ## Events
 ### SDK EVENTS
 All SDK events, which can be hooked into, are described below.
