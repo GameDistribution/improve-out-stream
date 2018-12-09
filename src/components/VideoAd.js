@@ -383,6 +383,8 @@ class VideoAd {
         this.adContainer.style.height = '0';
         this.adContainer.style.overflow = 'hidden';
         this.adContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        this.adContainer.style.margin = '0 0 1rem 0';
+        // Todo: animate show and hide of advertisement.
         // this.adContainer.style.transition = 'opacity ' +
         //     this.containerTransitionSpeed +
         //     'ms cubic-bezier(0.55, 0, 0.1, 1)';
@@ -504,6 +506,9 @@ class VideoAd {
         // cause we run a game, not an ad.
         this.adsManager = adsManagerLoadedEvent.getAdsManager(
             adsRenderingSettings);
+
+        // Mute the advertisement.
+        this.adsManager.setVolume(0);
 
         // Add listeners to the required events.
         // https://developers.google.com/interactive-media-

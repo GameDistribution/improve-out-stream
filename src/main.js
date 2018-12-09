@@ -11,6 +11,8 @@ import {dankLog} from './modules/dankLog';
 import {
     extendDefaults,
     getParentDomain,
+    onVisibilityChange,
+    debounce,
 } from './modules/common';
 
 let instance = null;
@@ -92,9 +94,9 @@ class SDK {
         }
 
         // GDPR (General Data Protection Regulation).
-        // Todo: make sure to pass proper EUConsent cookie, can't remember name.
+        // Todo: Read out EuConsent and check if tracking is allowed.
         const consent = document.cookie.split(';').
-            filter((item) => item.includes('EUConsent')).length === 1;
+            filter((item) => item.includes('EuConsent')).length === 1;
 
         // Load analytics solutions based on tracking consent.
         this._analytics(consent);
@@ -183,6 +185,26 @@ class SDK {
             console.log(error);
         }
 
+        // Here we set events to track if the out-stream solution is in view.
+        //
+        // If someone modifies DOM, it can affect the element's visibility.
+        // You should take control over that and call handler() manually.
+        // Unfortunately, we have no cross browser onrepaint event. On the
+        // other hand that allows us to make optimizations and perform
+        // re-check only on DOM modifications that can change element's
+        // visibility. After DOMContentLoaded is fired, styles are applied,
+        // but the images are not loaded yet. So, we add onload
+        // event listener. We can't catch zoom/pinch event yet.
+        // Todo: Pause ad when out of view.
+        const inViewHandler = onVisibilityChange(container, () => {
+            this.showAdvertisement();
+        });
+
+        addEventListener('DOMContentLoaded', debounce(inViewHandler, 100), false);
+        addEventListener('load', debounce(inViewHandler, 100), false);
+        addEventListener('scroll', debounce(inViewHandler, 100), false);
+        addEventListener('resize', debounce(inViewHandler, 100), false);
+
         // Start video advertisement instance.
         this.videoAdInstance.start();
     }
@@ -247,6 +269,7 @@ class SDK {
                 'https://www.google-analytics.com/analytics.js', 'ga');
         }
 
+        // Todo: Add correct analytics id.
         window['ga']('create', 'UA-102601800-1', {
             'name': 'idoutstream',
             'cookieExpires': 90 * 86400,
