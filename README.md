@@ -3,14 +3,14 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/gamedistribution/improve-out-stream/blob/master/LICENSE)
 
 
-# Improve Digital Out-stream advertisement solution
-This is the documentation of the "Improve Out-stream" project.
+# Improve Digital out-stream SDK
+This is the documentation of the "Improve out-stream SDK" project.
 
 ## Implementation
 ...
 
 ## Debugging
-Pages, which include the SDK, can be easily debugged by calling the following from a browser developer console:
+Web pages including the SDK can be easily debugged by calling the following from within a browser developer console:
 ```
 idoutstream.openConsole();
 ```
@@ -68,10 +68,10 @@ The SDK events are custom ads for handling any thing related to the IMA SDK itse
 | AD_SDK_ERROR | When the SDK hits a critical error. |
 | AD_SDK_FINISHED | When the SDK is finished running the ad. |
 | AD_CANCELED | When the ad is cancelled or stopped because its done running an ad. |
-| AD_SAFETY_TIMER | When the safety timer is cleared. We run this timer to make sure the SDK and ads do not stop us from starting the game after, whenever there is a weird error. |
+| AD_SAFETY_TIMER | When the safety timer is cleared. |
 
 ### AD EVENTS
-The Gamedistribution.com SDK uses the IMA SDK for loading ads. All events of this SDK are also available to the developer.
+The SDK uses the Google IMA SDK for loading ads. All events of this SDK are also available to the publisher.
 https://developers.google.com/interactive-media-ads/docs/sdks/html5/
 
 | Event | Description |
