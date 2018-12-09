@@ -47,7 +47,7 @@ class VideoAd {
         this.adDisplayContainer = null;
         this.eventBus = new EventBus();
         this.safetyTimer = null;
-        this.containerTransitionSpeed = 300;
+        this.containerTransitionSpeed = 500;
         this.requestRunning = false;
         this.container = container;
         this.eventCategory = 'AD';
@@ -187,7 +187,7 @@ class VideoAd {
 
     /**
      * _loadAd
-     * Load advertisements.
+     * Load and run the advertisement.
      * @param {String} vastUrl
      * @public
      */
@@ -220,6 +220,12 @@ class VideoAd {
             // Non-linear ads usually do not invoke the ALL_ADS_COMPLETED.
             // That would cause lots of problems of course...
             adsRequest.forceNonLinearFullSlot = true;
+
+            // Enable auto play of ads.
+            // Todo: Setup logic concerning auto play capabilities of IMA.
+            // https://developers.google.com/interactive-media-ads/docs/sdks/html5/autoplay
+            adsRequest.setAdWillAutoPlay(true);
+            adsRequest.setAdWillPlayMuted(true);
 
             // Get us some ads!
             this.adsLoader.requestAds(adsRequest);
@@ -302,7 +308,9 @@ class VideoAd {
      * @private
      */
     _hide() {
-        this.adContainer.style.display = 'block';
+        this.adContainer.style.margin = '0';
+        this.adContainer.style.padding = '0';
+        this.adContainer.style.opacity = '0';
         setTimeout(() => {
             this.adContainer.style.display = 'none';
         }, this.containerTransitionSpeed);
@@ -314,9 +322,11 @@ class VideoAd {
      * @private
      */
     _show() {
-        this.adContainer.style.display = 'none';
+        this.adContainer.style.display = 'block';
         setTimeout(() => {
-            this.adContainer.style.display = 'block';
+            this.adContainer.style.margin = '0 0 1rem 0';
+            this.adContainer.style.padding = '0 0 56.25% 0'; // 16:9
+            this.adContainer.style.opacity = '1';
         }, 10);
     }
 
@@ -379,21 +389,20 @@ class VideoAd {
         this.adContainer.id = this.options.prefix + 'advertisement';
         this.adContainer.style.display = 'none';
         this.adContainer.style.position = 'relative';
-        this.adContainer.style.padding = '0 0 56.25% 0';
         this.adContainer.style.height = '0';
+        this.adContainer.style.margin = '0';
+        this.adContainer.style.padding = '0';
+        this.adContainer.style.opacity = '0';
         this.adContainer.style.overflow = 'hidden';
-        this.adContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-        this.adContainer.style.margin = '0 0 1rem 0';
-        // Todo: animate show and hide of advertisement.
-        // this.adContainer.style.transition = 'opacity ' +
-        //     this.containerTransitionSpeed +
-        //     'ms cubic-bezier(0.55, 0, 0.1, 1)';
+        this.adContainer.style.transition = `
+            padding ${this.containerTransitionSpeed}ms cubic-bezier(0.55, 0, 0.1, 1),
+            opacity ${this.containerTransitionSpeed / 2}ms cubic-bezier(0.55, 0, 0.1, 1)
+            `;
 
         // This is the container where the actual ad will be embedded in.
         const adContainerInner = document.createElement('div');
         adContainerInner.id = this.options.prefix + 'advertisement_slot';
         adContainerInner.style.position = 'absolute';
-        adContainerInner.style.backgroundColor = '#000000';
         adContainerInner.style.top = '0';
         adContainerInner.style.right = '0';
         adContainerInner.style.bottom = '0';
@@ -439,6 +448,9 @@ class VideoAd {
 
         // Set language.
         google.ima.settings.setLocale(this.options.locale);
+
+        // https://developers.google.com/interactive-media-ads/docs/sdks/html5/skippable-ads
+        google.ima.settings.setDisableCustomPlaybackForIOS10Plus(true);
 
         // We assume the adContainer is the DOM id of the element that
         // will house the ads.

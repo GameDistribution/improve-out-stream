@@ -195,7 +195,8 @@ class SDK {
         // visibility. After DOMContentLoaded is fired, styles are applied,
         // but the images are not loaded yet. So, we add onload
         // event listener. We can't catch zoom/pinch event yet.
-        // Todo: Pause ad when out of view.
+        // Todo: Pause ad when out of view for >50%, resume if in view again.
+        // Todo: currently we show ad when it comes into view or goes out...
         const inViewHandler = onVisibilityChange(container, () => {
             this.showAdvertisement();
         });
@@ -305,7 +306,10 @@ class SDK {
                 dankLog('SDK_SHOW_ADVERTISEMENT',
                     'Requested the advertisement.',
                     'success');
+
                 this.adRequestTimer = new Date();
+
+                // Todo: Preload vastUrl so user doesnt have to wait for hb.
                 this.videoAdInstance.requestAd().
                     then(vastUrl => this.videoAdInstance.loadAd(vastUrl)).
                     catch(error => {
