@@ -86,7 +86,7 @@ class SDK {
 
         // Open the debug console when debugging is enabled.
         try {
-            if (localStorage.getItem('gd_debug')) {
+            if (localStorage.getItem('idoutstream_debug')) {
                 this.openConsole();
             }
         } catch (error) {

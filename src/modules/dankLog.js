@@ -12,7 +12,7 @@ const t = Date.now();
  */
 function dankLog(name, message, status) {
     try {
-        if (localStorage.getItem('gd_debug')) {
+        if (localStorage.getItem('idoutstream_debug')) {
             let theme = (status === 'error')
                 ? 'background: #c4161e; color: #fff'
                 : (status === 'warning')

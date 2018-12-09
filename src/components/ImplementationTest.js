@@ -132,10 +132,6 @@ class ImplementationTest {
             window.idoutstream.showAdvertisement();
         });
         cancelAd.addEventListener('click', () => {
-            // Reset the request attempt if the aforementioned
-            // requestAd() fails. So we can do an auto request
-            // for the next time we manually call requestAd().
-            window.idoutstream.videoAdInstance.requestAttempts = 0;
             window.idoutstream.videoAdInstance.cancel();
         });
         demoAd.addEventListener('click', () => {
@@ -162,7 +158,7 @@ class ImplementationTest {
                 if (localStorage.getItem('idoutstream_interval')) {
                     localStorage.removeItem('idoutstream_interval');
                 } else {
-                    localStorage.setItem('idoutstream_interval', '0');
+                    localStorage.setItem('idoutstream_interval', 'true');
                 }
                 location.reload();
             } catch (error) {
@@ -174,7 +170,7 @@ class ImplementationTest {
                 if (localStorage.getItem('idoutstream_debug')) {
                     localStorage.removeItem('idoutstream_debug');
                 } else {
-                    localStorage.setItem('idoutstream_debug', '0');
+                    localStorage.setItem('idoutstream_debug', 'true');
                 }
                 location.reload();
             } catch (error) {
