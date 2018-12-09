@@ -1,6 +1,5 @@
 [![npm](https://img.shields.io/npm/v/npm.svg)](https://nodejs.org/)
 [![GitHub version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/gamedistribution/improve-out-stream/)
-[![Built with Grunt](https://cdn.gruntjs.com/builtwith.svg)](http://gruntjs.com/)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/gamedistribution/improve-out-stream/blob/master/LICENSE)
 
 
