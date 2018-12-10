@@ -195,8 +195,18 @@ class SDK {
         // but the images are not loaded yet. So, we add onload
         // event listener. We can't catch zoom/pinch event yet.
         // Todo: Pause ad when out of view for >50%, resume if in view again.
-        const inViewHandler = onVisibilityChange(container, () => {
-            this.showAdvertisement();
+        // Todo: Set floating when ad is out of viewport.
+        const inViewHandler = onVisibilityChange(container, (inView) => {
+            if (inView) {
+                this.showAdvertisement();
+                if (this.videoAdInstance.floating) {
+                    this.videoAdInstance.floatReset();
+                }
+            } else {
+                if (!this.videoAdInstance.floating) {
+                    this.videoAdInstance.floatStart();
+                }
+            }
         });
 
         addEventListener('DOMContentLoaded', debounce(inViewHandler, 100), false);

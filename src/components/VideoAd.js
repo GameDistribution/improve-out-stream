@@ -46,12 +46,14 @@ class VideoAd {
         this.adsLoader = null;
         this.adsManager = null;
         this.adDisplayContainer = null;
+        this.adContainerInner = null;
         this.eventBus = new EventBus();
         this.safetyTimer = null;
         this.containerTransitionSpeed = 500;
         this.requestRunning = false;
         this.container = container;
         this.eventCategory = 'AD';
+        this.floating = false;
 
         // Setup a simple promise to resolve if the IMA loader is ready.
         // We mainly do this because showBanner() can be called before we've
@@ -65,6 +67,12 @@ class VideoAd {
             });
             this.eventBus.subscribe('AD_CANCELED', () => reject(
                 new Error('Initial adsLoaderPromise failed to load.')));
+        });
+
+        // Setup promise for our adsManager. We need to re-create this
+        // everytime an ad is cancelled or finished.
+        this.adsManagerPromise = new Promise((resolve) => {
+            this.eventBus.subscribe('AD_SDK_MANAGER_READY', () => resolve());
         });
 
         // Load Google IMA HTML5 SDK.
@@ -342,6 +350,60 @@ class VideoAd {
     }
 
     /**
+     * floatStart
+     * @public
+     */
+    floatStart() {
+        // Todo: Add float animation to position.
+        this.adsManagerPromise.then(() => {
+            this.floating = true;
+
+            this.adContainerInner.style.position = 'fixed';
+            this.adContainerInner.style.top = 'auto';
+            this.adContainerInner.style.left = 'auto';
+            this.adContainerInner.style.width = '300px';
+            this.adContainerInner.style.height = `${getRatioHeight(300, 9, 16)}px`;
+            this.adContainerInner.style.margin = '1rem';
+            this.adContainerInner.style.boxShadow = '0 8px 8px rgba(0, 0, 0, 0.3)';
+
+            // Todo: Ignore resize on resizing viewport.
+            // Resize the advertisement itself.
+            this.adsManager.resize(
+                this.adContainerInner.offsetWidth,
+                getRatioHeight(300, 9, 16),
+                google.ima.ViewMode.NORMAL,
+            );
+        });
+    }
+
+    /**
+     * floatReset
+     * @public
+     */
+    floatReset() {
+        this.adsManagerPromise.then(() => {
+            this.floating = false;
+
+            this.adContainerInner.style.position = 'absolute';
+            this.adContainerInner.style.top = '0';
+            this.adContainerInner.style.right = '0';
+            this.adContainerInner.style.bottom = '0';
+            this.adContainerInner.style.left = '0';
+            this.adContainerInner.style.width = 'inherit';
+            this.adContainerInner.style.height = 'inherit';
+            this.adContainerInner.style.margin = '0';
+            this.adContainerInner.style.boxShadow = '0 0 0 transparent';
+
+            // Resize the advertisement itself.
+            this.adsManager.resize(
+                this.container.offsetWidth,
+                getRatioHeight(this.container.offsetWidth, 9, 16),
+                google.ima.ViewMode.NORMAL,
+            );
+        });
+    }
+
+    /**
      * _loadScripts
      * Loads the Google IMA script using a <script> tag.
      * @return {Promise<any[]>}
@@ -405,21 +467,25 @@ class VideoAd {
         this.adContainer.style.padding = '0';
         this.adContainer.style.opacity = '0';
         this.adContainer.style.overflow = 'hidden';
+        this.adContainer.style.backgroundColor = '#000';
+        this.adContainer.style.borderRadius = '2px';
         this.adContainer.style.transition = `
             padding ${this.containerTransitionSpeed}ms cubic-bezier(0.55, 0, 0.1, 1),
             opacity ${this.containerTransitionSpeed / 2}ms cubic-bezier(0.55, 0, 0.1, 1)
             `;
 
         // This is the container where the actual ad will be embedded in.
-        const adContainerInner = document.createElement('div');
-        adContainerInner.id = this.options.prefix + 'advertisement_slot';
-        adContainerInner.style.position = 'absolute';
-        adContainerInner.style.top = '0';
-        adContainerInner.style.right = '0';
-        adContainerInner.style.bottom = '0';
-        adContainerInner.style.left = '0';
+        this.adContainerInner = document.createElement('div');
+        this.adContainerInner.id = this.options.prefix + 'advertisement_slot';
+        this.adContainerInner.style.position = 'absolute';
+        this.adContainerInner.style.top = '0';
+        this.adContainerInner.style.right = '0';
+        this.adContainerInner.style.bottom = '0';
+        this.adContainerInner.style.left = '0';
+        this.adContainerInner.style.backgroundColor = '#000';
+        this.adContainerInner.style.borderRadius = '2px';
 
-        this.adContainer.appendChild(adContainerInner);
+        this.adContainer.appendChild(this.adContainerInner);
         this.container.appendChild(this.adContainer);
     }
 
@@ -519,6 +585,7 @@ class VideoAd {
 
         // Mute the advertisement.
         this.adsManager.setVolume(0);
+        // Todo: Try to pause ad using adsManager?
 
         // Add listeners to the required events.
         // https://developers.google.com/interactive-media-

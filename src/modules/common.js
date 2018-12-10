@@ -42,19 +42,19 @@ function onVisibilityChange(el, callback) {
     let oldVisible = false;
     return () => {
         const visible = isElementInViewport(el);
-        if (visible !== oldVisible) {
-            oldVisible = visible;
-            if (typeof callback === 'function') {
-                callback();
-            }
+        // if (visible !== oldVisible) {
+        oldVisible = visible;
+        if (typeof callback === 'function') {
+            callback(visible);
         }
+        // }
     };
 }
 
 /**
  * _isElementInViewport
  * @param {Object} el
- * @return {boolean}
+ * @return {Boolean}
  * @private
  */
 function isElementInViewport(el) {
