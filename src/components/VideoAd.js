@@ -353,6 +353,8 @@ class VideoAd {
     floatStart() {
         // Todo: Add float animation to position.
         if (this.floating) return;
+        if (!this.adContainerInner) return;
+
         this.floating = true;
 
         this.adContainerInner.style.position = 'fixed';
@@ -380,6 +382,8 @@ class VideoAd {
      */
     floatReset() {
         if (!this.floating) return;
+        if (!this.adContainerInner) return;
+
         this.floating = false;
 
         this.adContainerInner.style.position = 'absolute';
