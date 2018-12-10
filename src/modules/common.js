@@ -59,13 +59,29 @@ function onVisibilityChange(el, callback) {
  */
 function isElementInViewport(el) {
     const rect = el.getBoundingClientRect();
+    const height = getRatioHeight(el.offsetWidth, 9, 16);
 
-    return rect.bottom > 0 &&
-        rect.right > 0 &&
-        rect.left <
-        (window.innerWidth || document.documentElement.clientWidth) &&
-        rect.top <
-        (window.innerHeight || document.documentElement.clientHeight);
+    const top = rect.top + height / 2 <
+        (window.innerHeight / 2 || document.documentElement.clientHeight / 2);
+    const right = rect.right >= 0;
+    const bottom = rect.bottom >= 0;
+    const left = rect.left <
+        (window.innerWidth || document.documentElement.clientWidth);
+
+    return top && right && bottom && left;
+}
+
+/**
+ * getRatioHeight
+ * @param {Number} width
+ * @param {Number} ratioHeight
+ * @param {Number} ratioWidth
+ * @return {Number}
+ * @private
+ */
+function getRatioHeight(width, ratioHeight, ratioWidth) {
+    const ratio = width / ratioWidth;
+    return ratio * ratioHeight;
 }
 
 /**
@@ -95,6 +111,7 @@ export {
     extendDefaults,
     getParentDomain,
     onVisibilityChange,
+    getRatioHeight,
     debounce,
 };
 /* eslint-enable */

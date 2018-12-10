@@ -4,6 +4,7 @@ import EventBus from '../components/EventBus';
 
 import {
     extendDefaults,
+    getRatioHeight,
 } from '../modules/common';
 import {dankLog} from '../modules/dankLog';
 
@@ -209,7 +210,7 @@ class VideoAd {
             // Specify the linear and nonlinear slot sizes. This helps
             // the SDK to select the correct creative if multiple are returned.
             const containerHeight =
-                this._getRatioHeight(this.container.offsetWidth, 9, 16);
+                getRatioHeight(this.container.offsetWidth, 9, 16);
             adsRequest.linearAdSlotWidth = this.container.offsetWidth;
             adsRequest.linearAdSlotHeight = containerHeight;
             adsRequest.nonLinearAdSlotWidth = this.container.offsetWidth;
@@ -413,19 +414,6 @@ class VideoAd {
     }
 
     /**
-     * _getRatioHeight
-     * @param {Number} width
-     * @param {Number} ratioHeight
-     * @param {Number} ratioWidth
-     * @return {Number}
-     * @private
-     */
-    _getRatioHeight(width, ratioHeight, ratioWidth) {
-        const ratio = width / ratioWidth;
-        return ratio * ratioHeight;
-    }
-
-    /**
      * _setUpIMA
      * Create the adsLoader object.
      * @private
@@ -589,7 +577,7 @@ class VideoAd {
         window.addEventListener('resize', () => {
             this.adsManager.resize(
                 this.container.offsetWidth,
-                this._getRatioHeight(this.container.offsetWidth, 9, 16),
+                getRatioHeight(this.container.offsetWidth, 9, 16),
                 google.ima.ViewMode.NORMAL,
             );
         });
@@ -625,7 +613,7 @@ class VideoAd {
                 // start at this time.
                 this.adsManager.init(
                     this.container.offsetWidth,
-                    this._getRatioHeight(this.container.offsetWidth, 9, 16),
+                    getRatioHeight(this.container.offsetWidth, 9, 16),
                     google.ima.ViewMode.NORMAL,
                 );
                 // Call play to start showing the ad. Single video and

@@ -95,8 +95,7 @@ class SDK {
 
         // GDPR (General Data Protection Regulation).
         // Todo: Read out EuConsent and check if tracking is allowed.
-        const consent = document.cookie.split(';').
-            filter((item) => item.includes('EuConsent')).length === 1;
+        const consent = document.cookie.indexOf('EuConsent') > 0;
 
         // Load analytics solutions based on tracking consent.
         this._analytics(consent);
@@ -196,7 +195,6 @@ class SDK {
         // but the images are not loaded yet. So, we add onload
         // event listener. We can't catch zoom/pinch event yet.
         // Todo: Pause ad when out of view for >50%, resume if in view again.
-        // Todo: currently we show ad when it comes into view or goes out...
         const inViewHandler = onVisibilityChange(container, () => {
             this.showAdvertisement();
         });
