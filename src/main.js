@@ -199,20 +199,16 @@ class SDK {
         const inViewHandler = onVisibilityChange(container, (inView) => {
             if (inView) {
                 this.showAdvertisement();
-                if (this.videoAdInstance.floating) {
-                    this.videoAdInstance.floatReset();
-                }
+                this.videoAdInstance.floatReset();
             } else {
-                if (!this.videoAdInstance.floating) {
-                    this.videoAdInstance.floatStart();
-                }
+                this.videoAdInstance.floatStart();
             }
         });
 
-        addEventListener('DOMContentLoaded', debounce(inViewHandler, 100), false);
-        addEventListener('load', debounce(inViewHandler, 100), false);
-        addEventListener('scroll', debounce(inViewHandler, 100), false);
-        addEventListener('resize', debounce(inViewHandler, 100), false);
+        addEventListener('DOMContentLoaded', inViewHandler, false);
+        addEventListener('load', inViewHandler, false);
+        addEventListener('scroll', debounce(inViewHandler, 50), false);
+        addEventListener('resize', debounce(inViewHandler, 50), false);
 
         // Start video advertisement instance.
         this.videoAdInstance.start();

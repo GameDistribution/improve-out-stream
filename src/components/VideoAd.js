@@ -69,12 +69,6 @@ class VideoAd {
                 new Error('Initial adsLoaderPromise failed to load.')));
         });
 
-        // Setup promise for our adsManager. We need to re-create this
-        // everytime an ad is cancelled or finished.
-        this.adsManagerPromise = new Promise((resolve) => {
-            this.eventBus.subscribe('AD_SDK_MANAGER_READY', () => resolve());
-        });
-
         // Load Google IMA HTML5 SDK.
         this._loadScripts().then(() => {
             this._createPlayer();
@@ -277,6 +271,9 @@ class VideoAd {
             // Hide the advertisement.
             this._hide();
 
+            // Reset styles.
+            this.floatReset();
+
             // Send event to tell that the whole advertisement
             // thing is finished.
             let eventName = 'AD_CANCELED';
@@ -355,25 +352,26 @@ class VideoAd {
      */
     floatStart() {
         // Todo: Add float animation to position.
-        this.adsManagerPromise.then(() => {
-            this.floating = true;
+        if (this.floating) return;
+        this.floating = true;
 
-            this.adContainerInner.style.position = 'fixed';
-            this.adContainerInner.style.top = 'auto';
-            this.adContainerInner.style.left = 'auto';
-            this.adContainerInner.style.width = '300px';
-            this.adContainerInner.style.height = `${getRatioHeight(300, 9, 16)}px`;
-            this.adContainerInner.style.margin = '1rem';
-            this.adContainerInner.style.boxShadow = '0 8px 8px rgba(0, 0, 0, 0.3)';
+        this.adContainerInner.style.position = 'fixed';
+        this.adContainerInner.style.top = 'auto';
+        this.adContainerInner.style.left = 'auto';
+        this.adContainerInner.style.width = '300px';
+        this.adContainerInner.style.height = `${getRatioHeight(300, 9, 16)}px`;
+        this.adContainerInner.style.margin = '1rem';
+        this.adContainerInner.style.boxShadow = '0 8px 8px rgba(0, 0, 0, 0.3)';
 
-            // Todo: Ignore resize on resizing viewport.
-            // Resize the advertisement itself.
+        // Todo: Ignore resize on resizing viewport.
+        // Resize the advertisement itself.
+        if (this.adsManager) {
             this.adsManager.resize(
                 this.adContainerInner.offsetWidth,
                 getRatioHeight(300, 9, 16),
                 google.ima.ViewMode.NORMAL,
             );
-        });
+        }
     }
 
     /**
@@ -381,26 +379,27 @@ class VideoAd {
      * @public
      */
     floatReset() {
-        this.adsManagerPromise.then(() => {
-            this.floating = false;
+        if (!this.floating) return;
+        this.floating = false;
 
-            this.adContainerInner.style.position = 'absolute';
-            this.adContainerInner.style.top = '0';
-            this.adContainerInner.style.right = '0';
-            this.adContainerInner.style.bottom = '0';
-            this.adContainerInner.style.left = '0';
-            this.adContainerInner.style.width = 'inherit';
-            this.adContainerInner.style.height = 'inherit';
-            this.adContainerInner.style.margin = '0';
-            this.adContainerInner.style.boxShadow = '0 0 0 transparent';
+        this.adContainerInner.style.position = 'absolute';
+        this.adContainerInner.style.top = '0';
+        this.adContainerInner.style.right = '0';
+        this.adContainerInner.style.bottom = '0';
+        this.adContainerInner.style.left = '0';
+        this.adContainerInner.style.width = 'inherit';
+        this.adContainerInner.style.height = 'inherit';
+        this.adContainerInner.style.margin = '0';
+        this.adContainerInner.style.boxShadow = '0 0 0 transparent';
 
-            // Resize the advertisement itself.
+        // Resize the advertisement itself.
+        if (this.adsManager) {
             this.adsManager.resize(
                 this.container.offsetWidth,
                 getRatioHeight(this.container.offsetWidth, 9, 16),
                 google.ima.ViewMode.NORMAL,
             );
-        });
+        }
     }
 
     /**
@@ -758,9 +757,6 @@ class VideoAd {
             eventMessage = 'Fired when content should be resumed. This ' +
                     'usually happens when an ad finishes or collapses.';
 
-            // Hide the advertisement.
-            this._hide();
-
             // Destroy the adsManager so we can grab new ads after this.
             // If we don't then we're not allowed to call new ads based
             // on google policies, as they interpret this as an accidental
@@ -772,6 +768,9 @@ class VideoAd {
 
                 // Hide the advertisement.
                 this._hide();
+
+                // Reset styles.
+                this.floatReset();
 
                 // We're done with the current request.
                 this.requestRunning = false;
