@@ -290,7 +290,7 @@ class SDK {
      * @public
      */
     showAdvertisement() {
-        this.videoAdInstance.adsLoaderPromise.then(() => {
+        this.videoAdInstance.adsLoaderPromise.then(vastUrl => {
             const elapsed =
                 (new Date()).valueOf() - this.adRequestTimer.valueOf();
 
@@ -306,13 +306,7 @@ class SDK {
                     'success');
 
                 this.adRequestTimer = new Date();
-
-                // Todo: Preload vastUrl so user doesnt have to wait for hb.
-                this.videoAdInstance.requestAd().
-                    then(vastUrl => this.videoAdInstance.loadAd(vastUrl)).
-                    catch(error => {
-                        this.videoAdInstance.onError(error);
-                    });
+                this.videoAdInstance.loadAd(vastUrl);
             }
         }).catch((error) => {
             dankLog('SDK_SHOW_ADVERTISEMENT', error, 'error');

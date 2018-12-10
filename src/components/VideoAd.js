@@ -57,7 +57,12 @@ class VideoAd {
         // We mainly do this because showBanner() can be called before we've
         // even setup our advertisement instance.
         this.adsLoaderPromise = new Promise((resolve, reject) => {
-            this.eventBus.subscribe('AD_SDK_LOADER_READY', () => resolve());
+            this.eventBus.subscribe('AD_SDK_LOADER_READY', () => {
+                // Preload the advertisement.
+                this._requestAd()
+                    .then(vastUrl => resolve(vastUrl))
+                    .catch(error => this.onError(error));
+            });
             this.eventBus.subscribe('AD_CANCELED', () => reject(
                 new Error('Initial adsLoaderPromise failed to load.')));
         });
@@ -127,42 +132,34 @@ class VideoAd {
     }
 
     /**
-     * requestAd
+     * _requestAd
      * Request advertisements.
      * @return {Promise} Promise that returns DFP vast url like
      *     https://pubads.g.doubleclick.net/...
-     * @public
+     * @private
      */
-    requestAd() {
+    _requestAd() {
         return new Promise((resolve, reject) => {
-            if (this.requestRunning) {
-                dankLog('AD_SDK_REQUEST', 'A request is already running',
-                    'warning');
-                return;
-            }
-
-            this.requestRunning = true;
+            dankLog('AD_REQUEST', 'Preloading VAST URL...', 'info');
 
             try {
                 // Now create the VAST URL based on environments.
                 // Either use a test URL, header bidding or Tunnl.
                 if (localStorage.getItem('idoutstream_debug') &&
                     localStorage.getItem('idoutstream_tag')) {
-                    resolve(localStorage.getItem('idoutstream_tag'));
+                    const vastUrl = localStorage.getItem('idoutstream_tag');
+                    // We're done with the current request.
+                    this.requestRunning = false;
+
+                    // Some logging.
+                    dankLog('AD_REQUEST', vastUrl, 'success');
+
+                    // Return the VAST URL.
+                    resolve(vastUrl);
                 } else {
                     if (typeof window.idhbgd.requestAds === 'undefined') {
                         reject(
                             'Prebid.js wrapper script hit an error or didn\'t exist!');
-                    }
-
-                    // Send event for Tunnl debugging.
-                    if (typeof window['ga'] !== 'undefined') {
-                        window['ga']('gd.send', {
-                            hitType: 'event',
-                            eventCategory: 'AD_REQUEST',
-                            eventAction: this.options.domain,
-                            eventLabel: this.options.tag,
-                        });
                     }
 
                     // Make the request for a VAST tag from the Prebid.js
@@ -175,12 +172,23 @@ class VideoAd {
                         window.idhbgd.setDfpAdUnitCode(this.options.tag);
                         window.idhbgd.requestAds({
                             callback: vastUrl => {
+                                // We're done with the current request.
+                                this.requestRunning = false;
+
+                                // Some logging.
+                                dankLog('AD_REQUEST', vastUrl, 'success');
+
+                                // Return the VAST URL.
                                 resolve(vastUrl);
                             },
                         });
                     });
                 }
             } catch (error) {
+                // We're done with the current request.
+                this.requestRunning = false;
+
+                // Return an error.
                 reject(error);
             }
         });
@@ -198,14 +206,20 @@ class VideoAd {
             return;
         }
 
+        if (this.requestRunning) {
+            dankLog('AD_SDK_LOAD_AD', 'An advertisement is already running',
+                'warning');
+            return;
+        }
+
+        this.requestRunning = true;
+
         try {
             // Request video new ads.
             const adsRequest = new google.ima.AdsRequest();
 
             // Set the VAST tag.
             adsRequest.adTagUrl = vastUrl;
-
-            dankLog('AD_SDK_TAG_URL', adsRequest.adTagUrl, 'success');
 
             // Specify the linear and nonlinear slot sizes. This helps
             // the SDK to select the correct creative if multiple are returned.
@@ -248,36 +262,32 @@ class VideoAd {
         // on google policies, as they interpret this as an accidental
         // video requests. https://developers.google.com/interactive-
         // media-ads/docs/sdks/android/faq#8
-        this.adsLoaderPromise.then(() => {
-            if (this.adsLoader) {
-                this.adsLoader.contentComplete();
-            }
-            if (this.adsManager) {
-                this.adsManager.destroy();
-            }
+        this.adsLoaderPromise = new Promise((resolve, reject) => {
+            if (this.adsLoader) this.adsLoader.contentComplete();
+            if (this.adsManager) this.adsManager.destroy();
 
             // Hide the advertisement.
             this._hide();
 
-            // We're done with the current request.
-            this.requestRunning = false;
-        }).catch(() => {
-            console.log(new Error('adsLoaderPromise failed to load.'));
-        });
+            // Send event to tell that the whole advertisement
+            // thing is finished.
+            let eventName = 'AD_CANCELED';
+            let eventMessage = 'Advertisement has been canceled.';
+            this.eventBus.broadcast(eventName, {
+                name: eventName,
+                message: eventMessage,
+                status: 'warning',
+                analytics: {
+                    category: this.eventCategory,
+                    action: eventName,
+                    label: this.options.domain,
+                },
+            });
 
-        // Send event to tell that the whole advertisement
-        // thing is finished.
-        let eventName = 'AD_CANCELED';
-        let eventMessage = 'Advertisement has been canceled.';
-        this.eventBus.broadcast(eventName, {
-            name: eventName,
-            message: eventMessage,
-            status: 'warning',
-            analytics: {
-                category: this.eventCategory,
-                action: eventName,
-                label: this.options.domain,
-            },
+            // Preload the advertisement.
+            this._requestAd().
+                then(vastUrl => resolve(vastUrl)).
+                catch(error => reject(error));
         });
     }
 
@@ -689,13 +699,12 @@ class VideoAd {
             // on google policies, as they interpret this as an accidental
             // video requests. https://developers.google.com/interactive-
             // media-ads/docs/sdks/android/faq#8
-            this.adsLoaderPromise.then(() => {
-                if (this.adsLoader) {
-                    this.adsLoader.contentComplete();
-                }
-                if (this.adsManager) {
-                    this.adsManager.destroy();
-                }
+            this.adsLoaderPromise = new Promise((resolve, reject) => {
+                if (this.adsLoader) this.adsLoader.contentComplete();
+                if (this.adsManager) this.adsManager.destroy();
+
+                // Hide the advertisement.
+                this._hide();
 
                 // We're done with the current request.
                 this.requestRunning = false;
@@ -714,8 +723,11 @@ class VideoAd {
                         label: `h${h} d${d} m${m} y${y}`,
                     },
                 });
-            }).catch(() => {
-                console.log(new Error('adsLoaderPromise failed to load.'));
+
+                // Preload the advertisement.
+                this._requestAd().
+                    then(vastUrl => resolve(vastUrl)).
+                    catch(error => reject(error));
             });
 
             break;
