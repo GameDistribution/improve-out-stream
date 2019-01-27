@@ -41,6 +41,8 @@ class SDK {
             testing: false,
             prefix: 'idoutstream__',
             containerId: 'outstream',
+            requestInterval: 60000,
+            tag: `https://ad.360yield.com/advast?p=13292561&w=16&h=9&minduration={MINDURATION}&maxduration={MAXDURATION}&player_width={PLAYER_WIDTH}&player_height={PLAYER_HEIGHT}&referrer={PAGE_REFERRER}&vast_version={VAST_VERSION}&vpaid_version={VPAID_VERSION}&video_format_type={VIDEO_TYPE}`,
             onEvent: function(event) {
                 // ...
             },
@@ -65,7 +67,7 @@ class SDK {
         /* eslint-enable */
 
         // First make sure we have an element set for ad displaying.
-        const container = document.getElementById(this.options.containerId);
+        const container = parent.document.getElementById(this.options.containerId);
         if (!container) {
             dankLog('SDK',
                 'Container element is missing within the document!', 'error');
@@ -152,18 +154,16 @@ class SDK {
         this.eventBus.subscribe('VOLUME_MUTED', (arg) => this._onEvent(arg));
 
         // Only allow ads after a certain amount of time.
-        this.adRequestInterval = 60000;
+        this.adRequestInterval = this.options.requestInterval;
         this.adRequestTimer = (new Date(new Date().getTime() -
             this.adRequestInterval)).valueOf();
 
         // Start our advertisement instance. Setting up the
         // adsLoader should resolve the adsLoader promise.
         this.videoAdInstance = new VideoAd(container, {
-            debug: false, // this.options.debug,
+            debug: this.options.debug,
             domain: parentDomain,
-            // Todo: add proper tag and targeting.
-            // tag: '',
-            // targeting: {},
+            tag: this.options.tag,
         });
 
         // Enable some debugging perks.

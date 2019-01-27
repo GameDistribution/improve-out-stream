@@ -139,14 +139,13 @@ class ImplementationTest {
                 if (localStorage.getItem('idoutstream_tag')) {
                     localStorage.removeItem('idoutstream_tag');
                 } else {
-                    // const tag = 'https://pubads.g.doubleclick.net/gampad/' +
-                    //     'ads?sz=640x480&iu=/124319096/external/' +
-                    //     'single_ad_samples&ciu_szs=300x250&impl=' +
-                    //     's&gdfp_req=1&env=vp&output=vast' +
-                    //     '&unviewed_position_start=1&' +
-                    //     'cust_params=deployment%3Ddevsite' +
-                    //     '%26sample_ct%3Dlinear&correlator=';
-                    const tag = `https://ad.360yield.com/advast?p=13292561&w=16&h=9&minduration={MINDURATION}&maxduration={MAXDURATION}&player_width={PLAYER_WIDTH}&player_height={PLAYER_HEIGHT}&referrer={PAGE_REFERRER}&vast_version={VAST_VERSION}&vpaid_version={VPAID_VERSION}&video_format_type={VIDEO_TYPE}`;
+                    const tag = 'https://pubads.g.doubleclick.net/gampad/' +
+                        'ads?sz=640x480&iu=/124319096/external/' +
+                        'single_ad_samples&ciu_szs=300x250&impl=' +
+                        's&gdfp_req=1&env=vp&output=vast' +
+                        '&unviewed_position_start=1&' +
+                        'cust_params=deployment%3Ddevsite' +
+                        '%26sample_ct%3Dlinear&correlator=';
                     localStorage.setItem('idoutstream_tag', tag);
                 }
                 location.reload();

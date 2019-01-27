@@ -35,6 +35,7 @@ class VideoAd {
             domain: '',
             tag: '',
             targeting: {},
+            headerBiddingEnabled: false,
         };
 
         if (options) {
@@ -146,7 +147,7 @@ class VideoAd {
 
             try {
                 // Now create the VAST URL based on environments.
-                // Either use a test URL, header bidding or Tunnl.
+                // Either use a test URL, header bidding or regular VAST URL.
                 if (localStorage.getItem('idoutstream_debug') &&
                     localStorage.getItem('idoutstream_tag')) {
                     const vastUrl = localStorage.getItem('idoutstream_tag');
@@ -158,7 +159,7 @@ class VideoAd {
 
                     // Return the VAST URL.
                     resolve(vastUrl);
-                } else {
+                } else if (this.options.headerBiddingEnabled) {
                     if (typeof window.idhbgd.requestAds === 'undefined') {
                         reject(
                             'Prebid.js wrapper script hit an error or didn\'t exist!');
@@ -185,6 +186,12 @@ class VideoAd {
                             },
                         });
                     });
+                } else {
+                    // Some logging.
+                    dankLog('AD_REQUEST', this.options.tag, 'success');
+
+                    // Just return the tag.
+                    resolve(this.options.tag);
                 }
             } catch (error) {
                 // We're done with the current request.
