@@ -42,27 +42,28 @@ function onVisibilityChange(el, callback) {
     let oldVisible = false;
     return () => {
         const visible = isElementInViewport(el);
-        if (visible !== oldVisible) {
-            oldVisible = visible;
-            if (typeof callback === 'function') {
-                callback();
-            }
+        // if (visible !== oldVisible) {
+        oldVisible = visible;
+        if (typeof callback === 'function') {
+            callback(visible);
         }
+        // }
     };
 }
 
 /**
  * _isElementInViewport
  * @param {Object} el
- * @return {boolean}
+ * @return {Boolean}
  * @private
  */
 function isElementInViewport(el) {
     const rect = el.getBoundingClientRect();
-    const height = getRatioHeight(el.offsetWidth, 9, 16);
+    // Todo: Add height of element or substract based on scrolling up/ down.
+    // const height = getRatioHeight(el.offsetWidth, 9, 16);
 
-    const top = rect.top + height / 2 <
-        (window.innerHeight / 2 || document.documentElement.clientHeight / 2);
+    const top = rect.top <
+        (window.innerHeight || document.documentElement.clientHeight / 2);
     const right = rect.right >= 0;
     const bottom = rect.bottom >= 0;
     const left = rect.left <
