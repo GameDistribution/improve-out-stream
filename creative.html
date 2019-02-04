@@ -4,6 +4,25 @@
     <title></title>
 </head>
 <body>
+
+<!--<script type="text/javascript">-->
+    <!--(function(d, s, id, l) {-->
+        <!--var js, fjs = d.getElementsByTagName(s)[0];-->
+        <!--if (d.getElementById(id)) return;-->
+        <!--js = d.createElement(s);-->
+        <!--js.id = id;-->
+        <!--js.onload = l;-->
+        <!--js.src = './lib/main.js?v=1';-->
+        <!--fjs.parentNode.insertBefore(js, fjs);-->
+    <!--}(parent.document, 'script', 'idoutstream-jssdk', function() {-->
+        <!--parent.OUTSTREAM_OPTIONS = {-->
+            <!--debug: true,-->
+            <!--containerId: 'outstream',-->
+            <!--tag: "https://ad.360yield.com/advast?p=13292561&w=16&h=9&minduration={MINDURATION}&maxduration={MAXDURATION}&player_width={PLAYER_WIDTH}&player_height={PLAYER_HEIGHT}&referrer={PAGE_REFERRER}&vast_version={VAST_VERSION}&vpaid_version={VPAID_VERSION}&video_format_type={VIDEO_TYPE}",-->
+        <!--};-->
+    <!--}));-->
+<!--</script>-->
+
 <script type="text/javascript">
     (function(d, s, id, l) {
         var js, fjs = d.getElementsByTagName(s)[0];
@@ -11,9 +30,19 @@
         js = d.createElement(s);
         js.id = id;
         js.onload = l;
+        js.async = true;
         js.src = './lib/main.js?v=1';
         fjs.parentNode.insertBefore(js, fjs);
     }(parent.document, 'script', 'idoutstream-jssdk', function() {
+        // Todo: Set parent or window based on condition for easy testing within DFP.
+        // Todo: Best way to set options for a noob?
+        if(top === self) {
+            try {
+
+            } catch(error) {
+
+            }
+        }
         parent['OUTSTREAM_OPTIONS'] = {
             'debug': true,
             'containerId': 'outstream',

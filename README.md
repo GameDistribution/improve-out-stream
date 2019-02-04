@@ -6,6 +6,24 @@
 # Improve Digital out-stream SDK
 This is the documentation of the "Improve out-stream SDK" project.
 
+## Todo:
+* General video player capabilities like muting, pause/ play, timer, advertisement label.
+* Make sure existing IMA SDK solutions on the page are conflicting with the outstream solution.
+* Preload advertisement and load fallback VAST tag or fallback display ad slot on failure.
+* Options:
+    * Set the player to be initially muted, or not.
+    * Decide to keep the player open whenever the ad finishes, and even load a display ad after.
+    * Enable pause or sticky mode when player moves out of view.
+    * Enable the header bidding solution.
+    * Poster image.
+    * Show/ hide animation speed.
+    * Hide certain video player UI elements.
+    * Background color.
+    * Font styles advertisement label.
+* Add localization for translatable strings.
+* Allow multiple outstream solutions to run on one page.
+* Test with Polaris solutions.
+
 ## Implementation
 ```
 <div id="outstream"></div>
